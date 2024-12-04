@@ -21,6 +21,11 @@ public class SistemaVeterinario extends Application {
         // TabPane para dividir las secciones
         TabPane tabPane = new TabPane();
 
+        // Pestaña de Bienvenida
+        Tab tabBienvenida = new Tab("Bienvenida");
+        tabBienvenida.setContent(crearPaginaBienvenida(tabPane));
+        tabBienvenida.setClosable(false);
+
         // Pestaña Gestión de Clientes y Mascotas
         Tab tabClientes = new Tab("Gestión de Clientes y Mascotas");
         tabClientes.setContent(crearGestionClientes());
@@ -31,12 +36,29 @@ public class SistemaVeterinario extends Application {
         tabCitas.setContent(crearGestionCitas());
         tabCitas.setClosable(false);
 
-        tabPane.getTabs().addAll(tabClientes, tabCitas);
+        tabPane.getTabs().addAll(tabBienvenida, tabClientes, tabCitas);
 
         Scene scene = new Scene(tabPane, 900, 600);
         primaryStage.setTitle("Sistema Veterinario");
         primaryStage.setScene(scene);
         primaryStage.show();
+    }
+
+    private VBox crearPaginaBienvenida(TabPane tabPane) {
+        Label lblTitulo = new Label("Bienvenido al Sistema Veterinario");
+        lblTitulo.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
+
+        Label lblDescripcion = new Label("Este sistema le permite gestionar clientes, mascotas y citas para su clínica veterinaria.\n"
+                + "Utilice las pestañas de la parte superior para navegar entre las diferentes secciones del sistema.\n\n"
+                + "- En la pestaña 'Gestión de Clientes y Mascotas', puede agregar, editar y eliminar clientes y sus mascotas.\n"
+                + "- En la pestaña 'Gestión de Citas', puede agendar, editar y eliminar citas para las mascotas.");
+
+        Button btnContinuar = new Button("Continuar");
+        btnContinuar.setOnAction(e -> tabPane.getSelectionModel().select(1));
+
+        VBox layoutBienvenida = new VBox(20, lblTitulo, lblDescripcion, btnContinuar);
+        layoutBienvenida.setStyle("-fx-alignment: center; -fx-padding: 20;");
+        return layoutBienvenida;
     }
 
     private VBox crearGestionClientes() {
@@ -45,34 +67,17 @@ public class SistemaVeterinario extends Application {
         TextField txtNombre = new TextField();
         Label lblTelefono = new Label("Teléfono:");
         TextField txtTelefono = new TextField();
-        Label lblDireccion = new Label("Dirección:");
+        Label lblDirección = new Label("Dirección:");
         TextField txtDireccion = new TextField();
 
-        // Campos para agregar mascota
-        Label lblMascotaNombre = new Label("Nombre de la Mascota:");
-        TextField txtMascotaNombre = new TextField();
-        Label lblMascotaEspecie = new Label("Especie de la Mascota:");
-        TextField txtMascotaEspecie = new TextField();
-        Button btnAgregarMascota = new Button("Agregar Mascota");
-
-        ObservableList<Mascota> listaMascotas = FXCollections.observableArrayList();
-        ListView<Mascota> listaMascotasView = new ListView<>(listaMascotas);
-
-        // Botón para agregar una mascota
-        btnAgregarMascota.setOnAction(e -> {
-            String mascotaNombre = txtMascotaNombre.getText();
-            String mascotaEspecie = txtMascotaEspecie.getText();
-            if (!mascotaNombre.isEmpty() && !mascotaEspecie.isEmpty()) {
-                Mascota nuevaMascota = new Mascota(mascotaNombre, mascotaEspecie);
-                listaMascotas.add(nuevaMascota);
-                txtMascotaNombre.clear();
-                txtMascotaEspecie.clear();
-            } else {
-                mostrarAlerta("Error", "Debe completar todos los campos de la mascota");
-            }
-        });
+        // Campos para mascota
+        Label lblNombreMascota = new Label("Nombre de la Mascota:");
+        TextField txtNombreMascota = new TextField();
+        Label lblEspecieMascota = new Label("Especie:");
+        TextField txtEspecieMascota = new TextField();
 
         Button btnAgregarCliente = new Button("Agregar Cliente");
+        Button btnAgregarMascota = new Button("Agregar Mascota");
         Button btnEliminarCliente = new Button("Eliminar Cliente");
         Button btnEditarCliente = new Button("Editar Cliente");
 
@@ -82,9 +87,9 @@ public class SistemaVeterinario extends Application {
         colNombre.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getNombre()));
         TableColumn<Cliente, String> colTelefono = new TableColumn<>("Teléfono");
         colTelefono.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getTelefono()));
-        TableColumn<Cliente, String> colDireccion = new TableColumn<>("Dirección");
-        colDireccion.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getDireccion()));
-        tablaClientes.getColumns().addAll(colNombre, colTelefono, colDireccion);
+        TableColumn<Cliente, String> colDirección = new TableColumn<>("Dirección");
+        colDirección.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getDireccion()));
+        tablaClientes.getColumns().addAll(colNombre, colTelefono, colDirección);
         tablaClientes.setItems(listaClientes);
 
         // Botón agregar cliente funcionalidad
@@ -94,14 +99,27 @@ public class SistemaVeterinario extends Application {
             String direccion = txtDireccion.getText();
             if (!nombre.isEmpty() && !telefono.isEmpty() && !direccion.isEmpty()) {
                 Cliente cliente = new Cliente(nombre, telefono, direccion);
-                cliente.getMascotas().addAll(listaMascotas);
                 listaClientes.add(cliente);
                 txtNombre.clear();
                 txtTelefono.clear();
                 txtDireccion.clear();
-                listaMascotas.clear();
             } else {
                 mostrarAlerta("Error", "Todos los campos deben ser completados");
+            }
+        });
+
+        // Botón agregar mascota funcionalidad
+        btnAgregarMascota.setOnAction(e -> {
+            Cliente clienteSeleccionado = tablaClientes.getSelectionModel().getSelectedItem();
+            String nombreMascota = txtNombreMascota.getText();
+            String especieMascota = txtEspecieMascota.getText();
+            if (clienteSeleccionado != null && !nombreMascota.isEmpty() && !especieMascota.isEmpty()) {
+                Mascota mascota = new Mascota(nombreMascota, especieMascota);
+                clienteSeleccionado.agregarMascota(mascota);
+                txtNombreMascota.clear();
+                txtEspecieMascota.clear();
+            } else {
+                mostrarAlerta("Error", "Debe seleccionar un cliente y completar los campos de la mascota");
             }
         });
 
@@ -122,7 +140,6 @@ public class SistemaVeterinario extends Application {
                 txtNombre.setText(clienteSeleccionado.getNombre());
                 txtTelefono.setText(clienteSeleccionado.getTelefono());
                 txtDireccion.setText(clienteSeleccionado.getDireccion());
-                listaMascotas.setAll(clienteSeleccionado.getMascotas());
                 listaClientes.remove(clienteSeleccionado);
             } else {
                 mostrarAlerta("Error", "Debe seleccionar un cliente para editar");
@@ -130,11 +147,10 @@ public class SistemaVeterinario extends Application {
         });
 
         // Layout
-        VBox formularioCliente = new VBox(10, lblNombre, txtNombre, lblTelefono, txtTelefono, lblDireccion, txtDireccion);
-        VBox formularioMascota = new VBox(10, lblMascotaNombre, txtMascotaNombre, lblMascotaEspecie, txtMascotaEspecie, btnAgregarMascota, listaMascotasView);
-        VBox botonesCliente = new VBox(10, btnAgregarCliente, btnEditarCliente);
-        VBox tablaClientesBox = new VBox(10, tablaClientes, btnEliminarCliente);
-        HBox layout = new HBox(20, formularioCliente, formularioMascota, botonesCliente, tablaClientesBox);
+        VBox formularioCliente = new VBox(10, lblNombre, txtNombre, lblTelefono, txtTelefono, lblDirección, txtDireccion, btnAgregarCliente, btnEditarCliente);
+        VBox formularioMascota = new VBox(10, lblNombreMascota, txtNombreMascota, lblEspecieMascota, txtEspecieMascota, btnAgregarMascota);
+        VBox tabla = new VBox(10, tablaClientes, btnEliminarCliente);
+        HBox layout = new HBox(20, formularioCliente, formularioMascota, tabla);
         return new VBox(layout);
     }
 
@@ -208,10 +224,6 @@ public class SistemaVeterinario extends Application {
         tablaCitas.getColumns().addAll(colCliente, colMascota, colFecha, colHora, colMotivo);
         tablaCitas.setItems(listaCitas);
 
-        tablaCitas.setPrefHeight(400);  // Ajustar la altura de la tabla para que llene más espacio
-        tablaCitas.setMaxWidth(Double.MAX_VALUE);
-        VBox.setVgrow(tablaCitas, Priority.ALWAYS);
-
         // Actualizar mascotas según el cliente seleccionado
         comboCliente.setOnAction(e -> {
             Cliente clienteSeleccionado = comboCliente.getValue();
@@ -278,7 +290,6 @@ public class SistemaVeterinario extends Application {
         VBox formulario = new VBox(10, lblCliente, comboCliente, lblMascota, comboMascota, lblFecha, datePickerFecha, lblHora, spinnerHora, lblMotivo, txtMotivo, btnAgendar, btnEditar);
         VBox tabla = new VBox(10, tablaCitas, btnEliminar);
         HBox layout = new HBox(20, formulario, tabla);
-        VBox.setVgrow(tabla, Priority.ALWAYS);
         return new VBox(layout);
     }
 
